@@ -275,3 +275,5 @@ fabric.properties
 
 .idea
 
+*.db
+
