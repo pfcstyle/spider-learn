@@ -98,9 +98,9 @@ def readExcel():
                 push_android.hour = times[0]
                 push_android.minute = times[1]
                 com_time = "{} {}:{}".format(push_android.date, push_android.hour, push_android.minute)
-                # if ~compare_time(com_time):
-                #     print('错误：第{}列第{}行时间距离当前时间小于1小时。'.format(i + 1, j + 1))
-                #     continue
+                if ~compare_time(com_time):
+                    print('错误：第{}列第{}行时间距离当前时间小于1小时。'.format(i + 1, j + 1))
+                    continue
 
                 # message_split = message.split('{#}')
                 message_split = message.split('{#}')
@@ -182,7 +182,7 @@ def login(driver: webdriver.Chrome):
     condition = expected_conditions.visibility_of_element_located((By.ID, 'password'))
     WebDriverWait(driver=driver, timeout=10, poll_frequency=0.5).until(condition)
     config = configparser.ConfigParser()
-    config.read('./config.ini')
+    config.read('./secret.ini')
     driver.find_element_by_id('email').send_keys(config.get('account', 'username'))
     driver.find_element_by_id('password').send_keys(config.get('account', 'password'))
     time.sleep(1)
