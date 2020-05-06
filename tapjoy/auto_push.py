@@ -25,7 +25,7 @@ def compare_time(time1):
     d1 = datetime.datetime.strptime(time1, '%Y/%m/%d %H:%M')
     d2 = datetime.datetime.now()
     delta = d1 - d2
-    if delta.seconds > 3600:
+    if delta.days > 0 or (delta.days == 0 and delta.seconds > 3600):
         return True
     else:
         return False
@@ -98,7 +98,7 @@ def readExcel():
                 push_android.hour = times[0]
                 push_android.minute = times[1]
                 com_time = "{} {}:{}".format(push_android.date, push_android.hour, push_android.minute)
-                if ~compare_time(com_time):
+                if not compare_time(com_time):
                     print('错误：第{}列第{}行时间距离当前时间小于1小时。'.format(i + 1, j + 1))
                     continue
 
@@ -204,7 +204,7 @@ def create_single_push(driver: webdriver.Chrome, push: push_notification):
     driver.implicitly_wait(30)
     condition = expected_conditions.visibility_of_element_located((By.CSS_SELECTOR, '.well.basic .body'))
     WebDriverWait(driver=driver, timeout=10, poll_frequency=0.5).until(condition)
-
+    time.sleep(3)
     try:
         close_notice_text = driver.find_element_by_id('btnNoticeClose')
         size = close_notice_text.size
@@ -230,6 +230,7 @@ def create_single_push(driver: webdriver.Chrome, push: push_notification):
     # 国家
     # 点击国家  展示列表
     target_body.find_element_by_css_selector(':nth-child(1) .multi_select').click()
+    time.sleep(1)
     # Japan
     country_list = target_body.find_element_by_css_selector(':nth-child(1) ul')
     countries = push.country.split(',')
@@ -287,11 +288,13 @@ def create_single_push(driver: webdriver.Chrome, push: push_notification):
     # 时
     selectors[0].click()
     hour_list = selectors[0].find_element_by_css_selector('ul')
-    hour_list.find_element_by_partial_link_text(push.hour).click()
+    driver.execute_script("arguments[0].click();",
+                          hour_list.find_element_by_partial_link_text(push.hour))
     # 分
     selectors[1].click()
     minute_list = selectors[1].find_element_by_css_selector('ul')
-    minute_list.find_element_by_partial_link_text(push.minute).click()
+    driver.execute_script("arguments[0].click();",
+                          minute_list.find_element_by_partial_link_text(push.minute))
 
     # 信息
     message_body = driver.find_element_by_css_selector('.well.message .body')
@@ -305,10 +308,12 @@ def create_single_push(driver: webdriver.Chrome, push: push_notification):
     message_content_ele = message_body.find_element_by_css_selector(':nth-child(3) textarea[name=message]')
     sendKeysWithEmojis(driver, message_content_ele, push.messageContent)
     # 发送状态
-    message_body.find_element_by_css_selector('.radio .onShowAlways').click()
+    driver.execute_script("arguments[0].click();",
+                          message_body.find_element_by_css_selector('.radio .onShowAlways'))
 
     # 排程
-    driver.find_element_by_css_selector('#page > div.page_content.container-fluid.push_index > div > div.form_btn > button.btn.btn_primary').click()
+    driver.execute_script("arguments[0].click();",
+                          driver.find_element_by_css_selector('#page > div.page_content.container-fluid.push_index > div > div.form_btn > button.btn.btn_primary'))
     # condition = expected_conditions.visibility_of_element_located((By.CSS_SELECTOR, '#pushTable > table > tbody > tr:nth-child(1) > td:nth-child(1)'))
     # WebDriverWait(driver=driver, timeout=10, poll_frequency=0.5).until(condition)
 
