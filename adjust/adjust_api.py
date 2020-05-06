@@ -13,6 +13,7 @@
 __author__ = 'developer'
 
 import configparser
+import datetime
 
 from aiohttp import ClientSession
 import asyncio
@@ -36,17 +37,17 @@ def saveData(result):
         data = res.split('\n')
         keys = data[0].split(',')
         data = [[x for x in y.split(',')] for y in data[1:]]
-        with open('{}.csv'.format(i), "r+", newline='') as f:
+        with open('{}.csv'.format(i), "w+", newline='') as f:
             writer = csv.writer(f)
             writer.writerows([keys])
             writer.writerows(data)
             data = csv.DictReader(f)
-            column = [row['installs'] for row in data]
+            writeExcel(data)
             f.close()
         i += 1
 
 
-def writeExcel(data):
+def writeExcel(data: csv.DictReader):
     wb = xlwt.Workbook()
     # 新建sheet
     ws = wb.add_sheet('0', cell_overwrite_ok=True)
@@ -66,7 +67,7 @@ def writeExcel(data):
         ws.write(i, 5, xlwt.Formula('SUM(A' + str(i + 1) + ':E' + str(i + 1) + ')'))
     # 插入图片，bmp格式，行数，列数，相对原来位置向下偏移的像素，相对原来位置向右偏移的像素，x缩放比例，y缩放比例
     ws.insert_bitmap('', 9, 1, 2, 2, scale_x=0.3, scale_y=0.3)
-    wb.save('result.xls')
+    wb.save('result.xlsx')
 
 async def getData(url, params):
     timeout = aiohttp.ClientTimeout(total=10)
@@ -77,8 +78,28 @@ async def getData(url, params):
 
 def run():
     url = "{}/{}".format(base_url, app_token)
-    for i in range(1):
-        task = asyncio.ensure_future(getData(url, {}))
+    today = datetime.datetime.now()
+    tomorrow = today + datetime.timedelta(days=1)
+    last_week = today - datetime.timedelta(days=7)
+    params={}
+    params_android = {
+        "attribution_source": "dynamic",
+        "attribution_type": "all",
+        "end_date": tomorrow.strftime('%Y-%m-%d'),
+        "event_kpis": "all_events|revenue",
+        "grouping": "dates",
+        "kpis": "installs, daus",
+        "os_names": "android",
+        "reattributed": "installs, daus",
+        "start_date": last_week.strftime('%Y-%m-%d'),
+        "utc_offset": "+00:00"
+    }
+    params_ios = params_android.copy()
+    params_ios['os_names'] = 'ios'
+    params['dau_android']
+    params.append(params_ios)
+    for param in params:
+        task = asyncio.ensure_future(getData(url, param))
         tasks.append(task)
     result = loop.run_until_complete(asyncio.gather(*tasks))
     saveData(result)
