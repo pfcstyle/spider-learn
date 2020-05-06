@@ -276,5 +276,5 @@ fabric.properties
 .idea
 
 *.db
-*.ini
+secret.ini
 *.pkl
