@@ -278,3 +278,4 @@ fabric.properties
 *.db
 secret.ini
 *.pkl
+push.xlsx

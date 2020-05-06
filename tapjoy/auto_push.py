@@ -182,7 +182,7 @@ def login(driver: webdriver.Chrome):
     condition = expected_conditions.visibility_of_element_located((By.ID, 'password'))
     WebDriverWait(driver=driver, timeout=10, poll_frequency=0.5).until(condition)
     config = configparser.ConfigParser()
-    config.read('./config.ini')
+    config.read('./secret.ini')
     driver.find_element_by_id('email').send_keys(config.get('account', 'username'))
     driver.find_element_by_id('password').send_keys(config.get('account', 'password'))
     time.sleep(1)
