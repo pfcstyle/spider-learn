@@ -50,15 +50,27 @@ def saveData(result: dict):
     writeExcel(final_excel_data)
 
 
-def getExcelData(key, data: pd.DataFrame):
-    if key == 'dau_android' or key == 'dau_ios':
+def secondToMinuteS(frame):
+    m, s = divmod(frame['time_spent_per_user'], 60)
+    m = 0 if np.isnan(m) else m
+    s = 0 if np.isnan(s) else s
+    return '{}m {}s'.format(int(m), int(s))
+
+
+def getExcelData(key: str, data: pd.DataFrame):
+    if key.find('dau') > -1:
         return data.loc[:, ['date', 'installs', 'daus']]
+    if key.find('cohorts') > -1: # retention_rate  sessions_per_user time_spent_per_user
+        # 筛选行
+        data = data.loc[((data['period'] == 0) | (data['period'] == 1) | (data['period'] == 3) | (data['period'] == 7) | (data['period'] == 14) | (data['period'] == 30)), ['date', 'period', 'retention_rate', 'sessions_per_user', 'time_spent_per_user']]
+        data['time_spent_per_user'] = data.apply(lambda x: secondToMinuteS(x), axis=1)
+        return data
 
 
 def writeExcel(data: dict):
     wb: xlwt.Workbook = xlwt.Workbook()
     # 新建sheet
-    ws: xlwt.Worksheet = wb.add_sheet('data', cell_overwrite_ok=True)
+
     # 对齐
     alignment = xlwt.Alignment()
     alignment.horz = xlwt.Alignment.HORZ_LEFT
@@ -70,7 +82,18 @@ def writeExcel(data: dict):
     # ws.write_merge(0, 0, 0, 5, 'neirong', style)
     # 写入数据（行, 列, 内容)
     total_rows = 0
+    ws: xlwt.Worksheet = wb.add_sheet('dau', cell_overwrite_ok=True)
+    has_create_ca = False
+    has_create_ci = False
     for key in data.keys():
+        if key.find('cohorts_android') > -1 and not has_create_ca:
+            total_rows = 0
+            ws: xlwt.Worksheet = wb.add_sheet('cohorts_android', cell_overwrite_ok=True)
+            has_create_ca = True
+        if key.find('cohorts_ios') > -1 and not has_create_ci:
+            total_rows = 0
+            ws: xlwt.Worksheet = wb.add_sheet('cohorts_ios', cell_overwrite_ok=True)
+            has_create_ci = True
         ws.write(total_rows, 0, key, style)
         total_rows += 1
         df: pd.DataFrame = data.get(key)# 二维数据
@@ -98,19 +121,21 @@ def writeExcel(data: dict):
 
 
 async def getData(url, params, key):
-    timeout = aiohttp.ClientTimeout(total=10)
+    timeout = aiohttp.ClientTimeout(total=30)
     async with ClientSession(timeout=timeout) as session:
         async with session.get(url, params=params, headers=headers) as response:
             res = await response.text()
             result[key] = res
 
 
-def run():
-    url = "{}/{}".format(base_url, app_token)
+def setDauParamsAndUrls():
+    url_dau = "{}/{}".format(base_url, app_token)
+    urls['dau_android'] = url_dau
+    urls['dau_ios'] = url_dau
+
     today = datetime.datetime.now()
     tomorrow = today + datetime.timedelta(days=1)
     last_week = today - datetime.timedelta(days=7)
-    params = {}
     params_android = {
         "attribution_source": "dynamic",
         "attribution_type": "all",
@@ -123,13 +148,71 @@ def run():
         "start_date": last_week.strftime('%Y-%m-%d'),
         "utc_offset": "+00:00"
     }
+    # 获取所有国家
     params_ios = params_android.copy()
     params_ios['os_names'] = 'ios'
     params['dau_android'] = params_android
     params['dau_ios'] = params_ios
+
+    # 根据国家获取
+    countries = ['jp', 'us', 'kr', 'cn', 'hk,mo,tw']
+    for country in countries:
+        country_key_android = 'cohorts_android_{}'.format(country)
+        country_key_ios = 'cohorts_ios_{}'.format(country)
+        urls[country_key_android] = url_dau
+        params_android['countries'] = country
+        params[country_key_android] = params_android
+
+        urls[country_key_ios] = url_dau
+        params_ios = params_android.copy()
+        params_ios['os_names'] = 'ios'
+        params[country_key_ios] = params_ios
+
+
+def setCohortsParamsAndUrls():
+    url_cohorts = "{}/{}/cohorts".format(base_url, app_token)
+
+    today = datetime.datetime.now()
+
+    last_month = today - datetime.timedelta(days=32)
+    params_android = {
+        "attribution_source": "dynamic",
+        "attribution_type": "click",
+        "cohort_period_filter": "0-32",
+        "end_date": today.strftime('%Y-%m-%d'),
+        "countries": 'jp',
+        "event_kpis": "all_events|revenue",
+        "grouping": "date,periods",
+        "kpis": "retention_rate,sessions_per_user,time_spent_per_user",
+        "os_names": "android",
+        "period": "day",
+        "reattributed": "all",
+        "start_date": last_month.strftime('%Y-%m-%d'),
+        "utc_offset": "+00:00"
+    }
+    params_ios = params_android.copy()
+    params_ios['os_names'] = 'ios'
+    # 按国家获取
+    countries = ['jp', 'us', 'kr', 'cn', 'hk,mo,tw']
+    for country in countries:
+        country_key_android = 'cohorts_android_{}'.format(country)
+        country_key_ios = 'cohorts_ios_{}'.format(country)
+        urls[country_key_android] = url_cohorts
+        params_android['countries'] = country
+        params[country_key_android] = params_android
+
+        urls[country_key_ios] = url_cohorts
+        params_ios = params_android.copy()
+        params_ios['os_names'] = 'ios'
+        params[country_key_ios] = params_ios
+
+
+def run():
+    setDauParamsAndUrls()
+    setCohortsParamsAndUrls()
     for key in params.keys():
         param = params.get(key)
-        task = asyncio.ensure_future(getData(url, param, key))
+        task = asyncio.ensure_future(getData(urls.get(key), param, key))
         tasks.append(task)
     loop.run_until_complete(asyncio.gather(*tasks))
     saveData(result)
@@ -141,6 +224,8 @@ if __name__ == '__main__':
     token = config.get('account', 'token')
     app_token = config.get('account', 'app_token')
     headers['Authorization'] = 'Token token={}'.format(token)
+    urls={}
+    params={}
     tasks = []
     result = {}
     loop = asyncio.get_event_loop()
