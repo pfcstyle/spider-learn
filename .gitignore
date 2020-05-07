@@ -127,9 +127,6 @@ docs/_build/
 # PyBuilder
 target/
 
-# Jupyter Notebook
-.ipynb_checkpoints
-
 # IPython
 profile_default/
 ipython_config.py
@@ -152,7 +149,6 @@ celerybeat-schedule
 
 # Environments
 .env
-.venv
 env/
 venv/
 ENV/
