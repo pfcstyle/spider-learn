@@ -67,8 +67,8 @@ def getExcelData(key: str, data: pd.DataFrame):
         data['sessions_per_user'] = data.apply(lambda row: None if row['period'] > 0 else row['sessions_per_user'], axis=1)
         data['time_spent_per_user'] = data.apply(lambda row: None if row['period'] > 0 else secondToMinuteS(row), axis=1)
         data: pd.DataFrame = data.set_index(['date', 'period']).unstack()
-        data.columns.names = ['items', 'period']
-        data: pd.DataFrame = data.swaplevel('items', 'period', axis=1)
+        # data.columns.names = ['items', 'period']
+        # data: pd.DataFrame = data.swaplevel('items', 'period', axis=1)
         # data: pd.DataFrame = data.groupby(data['period']).apply(lambda df: df).unstack(0)
         return data
 
@@ -171,8 +171,9 @@ def setDauParamsAndUrls():
     # 根据国家获取
     countries = ['jp', 'us', 'kr', 'cn', 'hk,mo,tw']
     for country in countries:
-        country_key_android = 'cohorts_android_{}'.format(country)
-        country_key_ios = 'cohorts_ios_{}'.format(country)
+        params_android = params_android.copy()
+        country_key_android = 'dau_android_{}'.format(country)
+        country_key_ios = 'dau_ios_{}'.format(country)
         urls[country_key_android] = url_dau
         params_android['countries'] = country
         params[country_key_android] = params_android
@@ -207,9 +208,10 @@ def setCohortsParamsAndUrls():
     params_ios = params_android.copy()
     params_ios['os_names'] = 'ios'
     # 按国家获取
-    # countries = ['jp', 'us', 'kr', 'cn', 'hk,mo,tw']
-    countries = ['jp']
+    countries = ['jp', 'us', 'kr', 'cn', 'hk,mo,tw']
+    # countries = ['jp']
     for country in countries:
+        params_android = params_android.copy()
         country_key_android = 'cohorts_android_{}'.format(country)
         country_key_ios = 'cohorts_ios_{}'.format(country)
         urls[country_key_android] = url_cohorts
@@ -223,7 +225,7 @@ def setCohortsParamsAndUrls():
 
 
 def run():
-    # setDauParamsAndUrls()
+    setDauParamsAndUrls()
     setCohortsParamsAndUrls()
     for key in params.keys():
         param = params.get(key)
