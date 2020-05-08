@@ -47,7 +47,7 @@ def saveData(result: dict):
         f.close()
         data = pd.DataFrame(pd.read_csv('{}.csv'.format(key)))
         final_excel_data[key] = getExcelData(key, data)
-    writeExcel(final_excel_data)
+    writeExcelByPandas(final_excel_data)
 
 
 def secondToMinuteS(frame):
@@ -62,9 +62,23 @@ def getExcelData(key: str, data: pd.DataFrame):
         return data.loc[:, ['date', 'installs', 'daus']]
     if key.find('cohorts') > -1: # retention_rate  sessions_per_user time_spent_per_user
         # 筛选行
-        data = data.loc[((data['period'] == 0) | (data['period'] == 1) | (data['period'] == 3) | (data['period'] == 7) | (data['period'] == 14) | (data['period'] == 30)), ['date', 'period', 'retention_rate', 'sessions_per_user', 'time_spent_per_user']]
-        data['time_spent_per_user'] = data.apply(lambda x: secondToMinuteS(x), axis=1)
+        data: pd.DataFrame = data.loc[((data['period'] == 0) | (data['period'] == 1) | (data['period'] == 3) | (data['period'] == 7) | (data['period'] == 14) | (data['period'] == 30)), ['date', 'period', 'retention_rate', 'sessions_per_user', 'time_spent_per_user']]
+        data['retention_rate'] = data.apply(lambda row: None if row['period'] == 0 else row['retention_rate'], axis=1)
+        data['sessions_per_user'] = data.apply(lambda row: None if row['period'] > 0 else row['sessions_per_user'], axis=1)
+        data['time_spent_per_user'] = data.apply(lambda row: None if row['period'] > 0 else secondToMinuteS(row), axis=1)
+        data: pd.DataFrame = data.set_index(['date', 'period']).unstack()
+        data.columns.names = ['items', 'period']
+        data: pd.DataFrame = data.swaplevel('items', 'period', axis=1)
+        # data: pd.DataFrame = data.groupby(data['period']).apply(lambda df: df).unstack(0)
         return data
+
+
+def writeExcelByPandas(data: dict):
+    writer = pd.ExcelWriter('output.xlsx')
+    for key in data.keys():
+        df: pd.DataFrame = data.get(key)
+        df.to_excel(writer, key)
+    writer.save()
 
 
 def writeExcel(data: dict):
@@ -193,7 +207,8 @@ def setCohortsParamsAndUrls():
     params_ios = params_android.copy()
     params_ios['os_names'] = 'ios'
     # 按国家获取
-    countries = ['jp', 'us', 'kr', 'cn', 'hk,mo,tw']
+    # countries = ['jp', 'us', 'kr', 'cn', 'hk,mo,tw']
+    countries = ['jp']
     for country in countries:
         country_key_android = 'cohorts_android_{}'.format(country)
         country_key_ios = 'cohorts_ios_{}'.format(country)
@@ -208,7 +223,7 @@ def setCohortsParamsAndUrls():
 
 
 def run():
-    setDauParamsAndUrls()
+    # setDauParamsAndUrls()
     setCohortsParamsAndUrls()
     for key in params.keys():
         param = params.get(key)
