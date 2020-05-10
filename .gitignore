@@ -278,3 +278,6 @@ push.xlsx
 *.xls
 *.xlsx
 *.m4a
+
+assets/
+result/
