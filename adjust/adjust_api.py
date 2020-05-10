@@ -22,6 +22,9 @@ import csv
 import xlwt
 import pandas as pd
 import numpy as np
+import time
+
+import  os
 
 
 headers = {
@@ -34,18 +37,20 @@ base_url = 'https://api.adjust.com/kpis/v1'
 
 
 def saveData(result: dict):
+    if not os.path.exists('./csv'):
+        os.mkdir('./csv')
     final_excel_data = {}
     for key in result.keys():
         res = result.get(key)
         data = res.split('\n')
         titles = data[0].split(',')
         data = [[x for x in y.split(',')] for y in data[1:]]
-        f = open('{}.csv'.format(key), "w+", newline='')
+        f = open('csv/{}.csv'.format(key), "w+", newline='')
         writer = csv.writer(f)
         writer.writerows([titles])
         writer.writerows(data)
         f.close()
-        data = pd.DataFrame(pd.read_csv('{}.csv'.format(key)))
+        data = pd.DataFrame(pd.read_csv('csv/{}.csv'.format(key)))
         final_excel_data[key] = getExcelData(key, data)
     writeExcelByPandas(final_excel_data)
 
@@ -147,19 +152,29 @@ def setDauParamsAndUrls():
     urls['dau_android'] = url_dau
     urls['dau_ios'] = url_dau
 
+    end_time = config.get('dau', 'end_time')
+    try:
+        if end_time == 'today':
+            end_time = datetime.datetime.now()
+        else:
+            end_time = time.strptime(end_time, "%Y/%m/%d")
+    except Exception as err:
+        print('错误：dau end_time设置错误')
+        exit(-1)
+
+    day_num = int(config.get('dau', 'day_num'))
+    start_time = end_time - datetime.timedelta(days=day_num)
     today = datetime.datetime.now()
-    tomorrow = today + datetime.timedelta(days=1)
-    last_week = today - datetime.timedelta(days=7)
     params_android = {
         "attribution_source": "dynamic",
         "attribution_type": "all",
-        "end_date": tomorrow.strftime('%Y-%m-%d'),
+        "end_date": end_time.strftime('%Y-%m-%d'),
         "event_kpis": "all_events|revenue",
         "grouping": "dates",
         "kpis": "installs, daus",
         "os_names": "android",
         "reattributed": "installs, daus",
-        "start_date": last_week.strftime('%Y-%m-%d'),
+        "start_date": start_time.strftime('%Y-%m-%d'),
         "utc_offset": "+00:00"
     }
     # 获取所有国家
@@ -187,14 +202,23 @@ def setDauParamsAndUrls():
 def setCohortsParamsAndUrls():
     url_cohorts = "{}/{}/cohorts".format(base_url, app_token)
 
-    today = datetime.datetime.now()
+    end_time = config.get('cohorts', 'end_time')
+    try:
+        if end_time == 'today':
+            end_time = datetime.datetime.now()
+        else:
+            end_time = time.strptime(end_time, "%Y/%m/%d")
+    except Exception as err:
+        print('错误：cohorts end_time设置错误')
+        exit(-1)
 
-    last_month = today - datetime.timedelta(days=32)
+    day_num = int(config.get('cohorts', 'day_num'))
+    start_time = end_time - datetime.timedelta(days=day_num)
     params_android = {
         "attribution_source": "dynamic",
         "attribution_type": "click",
         "cohort_period_filter": "0-32",
-        "end_date": today.strftime('%Y-%m-%d'),
+        "end_date": end_time.strftime('%Y-%m-%d'),
         "countries": 'jp',
         "event_kpis": "all_events|revenue",
         "grouping": "date,periods",
@@ -202,7 +226,7 @@ def setCohortsParamsAndUrls():
         "os_names": "android",
         "period": "day",
         "reattributed": "all",
-        "start_date": last_month.strftime('%Y-%m-%d'),
+        "start_date": start_time.strftime('%Y-%m-%d'),
         "utc_offset": "+00:00"
     }
     params_ios = params_android.copy()
