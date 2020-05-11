@@ -22,7 +22,6 @@ import csv
 import xlwt
 import pandas as pd
 import numpy as np
-import time
 
 import  os
 
@@ -157,7 +156,7 @@ def setDauParamsAndUrls():
         if end_time == 'today':
             end_time = datetime.datetime.now()
         else:
-            end_time = time.strptime(end_time, "%Y/%m/%d")
+            end_time = datetime.datetime.strptime(end_time, "%Y/%m/%d")
     except Exception as err:
         print('错误：dau end_time设置错误')
         exit(-1)
@@ -207,7 +206,7 @@ def setCohortsParamsAndUrls():
         if end_time == 'today':
             end_time = datetime.datetime.now()
         else:
-            end_time = time.strptime(end_time, "%Y/%m/%d")
+            end_time = datetime.datetime.strptime(end_time, "%Y/%m/%d")
     except Exception as err:
         print('错误：cohorts end_time设置错误')
         exit(-1)
@@ -260,10 +259,12 @@ def run():
 
 
 if __name__ == '__main__':
+    secretConfig = configparser.ConfigParser()
+    secretConfig.read('./secret.ini')
     config = configparser.ConfigParser()
-    config.read('./secret.ini')
-    token = config.get('account', 'token')
-    app_token = config.get('account', 'app_token')
+    config.read('./config.ini')
+    token = secretConfig.get('account', 'token')
+    app_token = secretConfig.get('account', 'app_token')
     headers['Authorization'] = 'Token token={}'.format(token)
     urls={}
     params={}
