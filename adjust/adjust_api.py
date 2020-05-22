@@ -258,10 +258,12 @@ def run():
 
 
 if __name__ == '__main__':
+    secretConfig = configparser.ConfigParser()
+    secretConfig.read('./secret.ini')
     config = configparser.ConfigParser()
-    config.read('./secret.ini')
-    token = config.get('account', 'token')
-    app_token = config.get('account', 'app_token')
+    config.read('./config.ini')
+    token = secretConfig.get('account', 'token')
+    app_token = secretConfig.get('account', 'app_token')
     headers['Authorization'] = 'Token token={}'.format(token)
     urls={}
     params={}
