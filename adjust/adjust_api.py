@@ -22,7 +22,6 @@ import csv
 import xlwt
 import pandas as pd
 import numpy as np
-import time
 
 import  os
 
@@ -157,14 +156,13 @@ def setDauParamsAndUrls():
         if end_time == 'today':
             end_time = datetime.datetime.now()
         else:
-            end_time = time.strptime(end_time, "%Y/%m/%d")
+            end_time = datetime.datetime.strptime(end_time, "%Y/%m/%d")
     except Exception as err:
         print('错误：dau end_time设置错误')
         exit(-1)
 
     day_num = int(config.get('dau', 'day_num'))
     start_time = end_time - datetime.timedelta(days=day_num)
-    today = datetime.datetime.now()
     params_android = {
         "attribution_source": "dynamic",
         "attribution_type": "all",
@@ -207,7 +205,7 @@ def setCohortsParamsAndUrls():
         if end_time == 'today':
             end_time = datetime.datetime.now()
         else:
-            end_time = time.strptime(end_time, "%Y/%m/%d")
+            end_time = datetime.datetime.strptime(end_time, "%Y/%m/%d")
     except Exception as err:
         print('错误：cohorts end_time设置错误')
         exit(-1)

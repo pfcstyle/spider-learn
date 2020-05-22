@@ -72,7 +72,7 @@ def readExcel():
         timeStruct = time.strptime(date, "%Y/%m/%d")
         # timeStruct = time.localtime(date)
         for j in range(1, nrows):
-            message = str(col_values[j])
+            message = str(col_values[j]).strip()
             if not message:
                 print('警告：第{}列第{}行内容为空'.format(i + 1, j + 1))
             if message:
@@ -103,7 +103,14 @@ def readExcel():
                     continue
 
                 # message_split = message.split('{#}')
-                message_split = message.split('{#}')
+                message_split = []
+                if message.find('{#}') > -1:
+                    message_split = message.split('{#}')
+                else:
+                    enter_index = message.index('\n')
+                    message_split.append(message[0: enter_index])
+                    message_split.append(message[enter_index:])
+
                 if len(message_split) != 2:
                     print('错误：第{}列第{}行内容错误：分隔符数量错误。'.format(i + 1, j + 1))
                     continue
@@ -201,17 +208,16 @@ def login(driver: webdriver.Chrome):
 
 def create_single_push(driver: webdriver.Chrome, push: push_notification):
     driver.get('https://ltv.tapjoy.com/s/5d4401f8-0800-8000-8000-7a5cca0009d3/monetization#push/edit?type=manual')
-    driver.implicitly_wait(30)
+    driver.implicitly_wait(20)
     condition = expected_conditions.visibility_of_element_located((By.CSS_SELECTOR, '.well.basic .body'))
     WebDriverWait(driver=driver, timeout=10, poll_frequency=0.5).until(condition)
-    time.sleep(3)
     try:
         close_notice_text = driver.find_element_by_id('btnNoticeClose')
         size = close_notice_text.size
         if size['height'] > 1 and size['width'] > 1:
             close_notice_text.click()
     except NoSuchElementException:
-        print('no notice ')
+        print('')
     except ElementNotInteractableException:
         print('sss')
 
