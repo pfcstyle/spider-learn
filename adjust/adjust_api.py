@@ -163,7 +163,6 @@ def setDauParamsAndUrls():
 
     day_num = int(config.get('dau', 'day_num'))
     start_time = end_time - datetime.timedelta(days=day_num)
-    today = datetime.datetime.now()
     params_android = {
         "attribution_source": "dynamic",
         "attribution_type": "all",
