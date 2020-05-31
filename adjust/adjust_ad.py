@@ -44,6 +44,7 @@ def saveData(result: dict):
     os.mkdir(csv_dir)
 
     final_excel_data = {}
+    will_merge_datas = []
     for key in result.keys():
         res = result.get(key)
         data = res.split('\n')
@@ -55,9 +56,23 @@ def saveData(result: dict):
         writer.writerows(data)
         f.close()
         data = pd.DataFrame(pd.read_csv('{}/{}.csv'.format(csv_dir, key)))
-        final_excel_data[key] = getExcelData(key, data)
+        final_excel_data[key] = getExcelData(key, data, will_merge_datas)
         # final_excel_data[key] = data
+    final_excel_data['merge'] = mergeData(will_merge_datas)
     writeExcelByPandas(final_excel_data)
+
+
+def mergeData(data: list):
+    merged_data = data[0]
+    i = 0
+    for ele in data:
+        if i == 0:
+            i += 1
+            continue
+        merged_data = pd.merge(merged_data, ele, how="outer", on='tracker_name')
+
+    return merged_data
+
 
 
 def secondToMinuteS(frame):
@@ -67,10 +82,14 @@ def secondToMinuteS(frame):
     return '{}m {}s'.format(int(m), int(s))
 
 
-def getExcelData(key: str, data: pd.DataFrame):
-    return data.loc[:,
+def getExcelData(key: str, data: pd.DataFrame, will_merge_datas: list):
+    all_excel_data = data.loc[:,
            ['tracker_name', 'installs', 'ctr', 'click_conversion_rate', 'revenue', 'cost', 'return_on_investment',
             'rcr']]
+    will_merge_data = all_excel_data.loc[:, ['tracker_name', 'rcr']]
+    will_merge_data.rename(columns={'rcr': 'rcr_{}'.format(key)}, inplace=True)
+    will_merge_datas.append(will_merge_data)
+    return all_excel_data
 
 
 def writeExcelByPandas(data: dict):
