@@ -212,7 +212,7 @@ def setCohortsParamsAndUrls():
 
     day_num = int(config.get('cohorts', 'day_num'))
     start_time = end_time - datetime.timedelta(days=day_num)
-    params_android = {
+    params_all = {
         "attribution_source": "dynamic",
         "attribution_type": "click",
         "cohort_period_filter": "0-32",
@@ -221,29 +221,36 @@ def setCohortsParamsAndUrls():
         "event_kpis": "all_events|revenue",
         "grouping": "date,periods",
         "kpis": "retention_rate,sessions_per_user,time_spent_per_user",
-        "os_names": "android",
         "period": "day",
         "reattributed": "all",
         "start_date": start_time.strftime('%Y-%m-%d'),
         "utc_offset": "+00:00"
     }
-    params_ios = params_android.copy()
-    params_ios['os_names'] = 'ios'
     # 按国家获取
     countries = ['jp', 'us', 'kr', 'cn', 'hk,mo,tw']
     # countries = ['jp']
     for country in countries:
-        params_android = params_android.copy()
+        params_all = params_all.copy()
+        params_all['countries'] = country
+
+        params_android = params_all.copy()
+        params_android['os_names'] = 'android'
+
+        params_ios = params_all.copy()
+        params_ios['os_names'] = 'ios'
+
         country_key_android = 'cohorts_android_{}'.format(country)
         country_key_ios = 'cohorts_ios_{}'.format(country)
+        country_key_all = 'cohorts_{}'.format(country)
+
         urls[country_key_android] = url_cohorts
-        params_android['countries'] = country
         params[country_key_android] = params_android
 
         urls[country_key_ios] = url_cohorts
-        params_ios = params_android.copy()
-        params_ios['os_names'] = 'ios'
         params[country_key_ios] = params_ios
+
+        urls[country_key_all] = url_cohorts
+        params[country_key_all] = params_ios
 
 
 def run():
