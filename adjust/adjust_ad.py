@@ -50,7 +50,7 @@ def saveData(result: dict):
         data = res.split('\n')
         titles = data[0].split(',')
         data = [[x for x in y.split(',')] for y in data[1:]]
-        f = open('{}/{}.csv'.format(csv_dir, key), "w+", newline='')
+        f = open('{}/{}.csv'.format(csv_dir, key), "w+", newline='', encoding='utf-8')
         writer = csv.writer(f)
         writer.writerows([titles])
         writer.writerows(data)
