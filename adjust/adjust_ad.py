@@ -45,7 +45,7 @@ def saveData(result: dict):
 
     final_excel_data = {}
     will_merge_datas = []
-    for key in result.keys():
+    for key in all_keys:
         res = result.get(key)
         data = res.split('\n')
         titles = data[0].split(',')
@@ -151,7 +151,7 @@ def setParamsAndUrls():
         end_date = iend_time.strftime('%Y-%m-%d')
         params_ad["end_date"] = end_date
         params[end_date] = params_ad.copy()
-
+        all_keys.append(end_date)
 
 def run():
     setParamsAndUrls()
@@ -173,6 +173,7 @@ if __name__ == '__main__':
     tracker_token = secretConfig.get('account', 'tracker_token')
     headers['Authorization'] = 'Token token={}'.format(token)
     url_ad = "{}/{}/trackers/{}".format(base_url, app_token, tracker_token)
+    all_keys = []
     params = {}
     tasks = []
     result = {}
