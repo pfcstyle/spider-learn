@@ -60,6 +60,7 @@ def saveData(result: dict):
         # final_excel_data[key] = data
     final_excel_data['merge'] = mergeData(will_merge_datas)
     writeExcelByPandas(final_excel_data)
+    print("完成！")
 
 
 def mergeData(data: list):
