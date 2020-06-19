@@ -56,6 +56,7 @@ def saveData(result: dict):
         f.close()
         data = pd.DataFrame(pd.read_csv('{}/{}.csv'.format(csv_dir, key)))
         final_excel_data[key] = getExcelData(key, data)
+        print('正在处理{}'.format(key))
     writeExcelByPandas(final_excel_data)
 
 
@@ -90,14 +91,18 @@ def secondToMinuteS(frame):
 def getExcelData(key: str, data: pd.DataFrame):
     data: pd.DataFrame = data.loc[:, ['date', 'period', 'retention_rate']]
     data: pd.DataFrame = data.set_index(['date', 'period']).unstack()
-    all_excel_data = data.loc[:, ['date']]
+    data.dropna(how='all', inplace=True)
+    data.dropna(how='all', inplace=True, axis=1)
+    # data = data.apply(lambda row: None if row.isnull().sum() >= len(row) else row, axis=1)
+    all_excel_data = data.copy(deep=True)
 
     column_num = data.shape[1]
     for period in [30, 60, 90, 100, 120]:
         if period > column_num - 1:
             continue
         temp_data: pd.DataFrame = data.iloc[:, 0: period + 1]
-        all_excel_data["{}d".format(period)] = temp_data.apply(lambda row: None if len(row.dropna()) < period + 1 else row.sum(), axis=1)
+        # all_excel_data["{}d".format(period)] = temp_data.apply(lambda row: None if len(row.dropna()) < period + 1 and row[len(period)] else row.sum(), axis=1)
+        all_excel_data["{}d".format(period)] = temp_data.apply(lambda row: row.sum(), axis=1)
     # all_excel_data = all_excel_data.drop(labels=[1, 2])
     return all_excel_data
 
@@ -130,7 +135,7 @@ def setParamsAndUrls():
         print('错误：start_time or end_time设置错误')
         print(err)
         exit(-1)
-    end_time = start_time + datetime.timedelta(days=121)
+    end_time = start_time + datetime.timedelta(days=120)
     start_date = start_time.strftime('%Y-%m-%d')
     end_date = end_time.strftime('%Y-%m-%d')
     params_android = {
@@ -169,12 +174,14 @@ def setParamsAndUrls():
 def run():
     setParamsAndUrls()
     # testSave()
+    print("正在请求数据。。。")
     for key in params.keys():
         param = params.get(key)
         task = asyncio.ensure_future(getData(url_cohorts, param, key))
         tasks.append(task)
     loop.run_until_complete(asyncio.gather(*tasks))
     saveData(result)
+    print("处理完成")
 
 
 if __name__ == '__main__':
