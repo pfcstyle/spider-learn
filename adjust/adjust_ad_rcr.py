@@ -34,8 +34,8 @@ headers = {
 
 
 base_url = 'https://api.adjust.com/kpis/v1'
-csv_dir = './csv_ad'
-output_file = 'output_ad{}.xlsx'
+csv_dir = './csv_ad_rcr'
+output_file = 'output_ad_rcr.xlsx'
 
 
 def saveData(result: dict):
@@ -56,9 +56,9 @@ def saveData(result: dict):
         writer.writerows(data)
         f.close()
         data = pd.DataFrame(pd.read_csv('{}/{}.csv'.format(csv_dir, key)))
-        final_excel_data[key] = getExcelData(key, data, will_merge_datas)
+        getExcelData(key, data, will_merge_datas)
         # final_excel_data[key] = data
-    final_excel_data['merge'] = mergeData(will_merge_datas)
+    final_excel_data['ad_rcr'] = mergeData(will_merge_datas)
     writeExcelByPandas(final_excel_data)
     print("完成！")
 
@@ -85,8 +85,7 @@ def secondToMinuteS(frame):
 
 def getExcelData(key: str, data: pd.DataFrame, will_merge_datas: list):
     all_excel_data = data.loc[:,
-           ['tracker_name', 'installs', 'ctr', 'click_conversion_rate', 'revenue', 'cost', 'return_on_investment',
-            'rcr']]
+           ['tracker_name', 'rcr']]
     will_merge_data = all_excel_data.loc[:, ['tracker_name', 'rcr']]
     will_merge_data.rename(columns={'rcr': 'rcr_{}'.format(key)}, inplace=True)
     will_merge_datas.append(will_merge_data)
@@ -94,10 +93,7 @@ def getExcelData(key: str, data: pd.DataFrame, will_merge_datas: list):
 
 
 def writeExcelByPandas(data: dict):
-    start_time = config.get('ad', 'start_time')
-    start_time = datetime.datetime.strptime(start_time, "%Y/%m/%d")
-    start_date = start_time.strftime('%Y-%m-%d')
-    writer = pd.ExcelWriter(output_file.format(start_date))
+    writer = pd.ExcelWriter(output_file)
     for key in data.keys():
         df: pd.DataFrame = data.get(key)
         df.to_excel(writer, key)
@@ -114,9 +110,8 @@ async def getData(url, params, key):
 
 def setParamsAndUrls():
 
-    start_time = config.get('ad', 'start_time')
-    end_time = config.get('ad', 'end_time')
-    period = config.getint('ad', 'period')
+    start_time = config.get('ad_rcr', 'start_time')
+    end_time = config.get('ad_rcr', 'end_time')
     try:
         end_time = datetime.datetime.strptime(end_time, "%Y/%m/%d")
         start_time = datetime.datetime.strptime(start_time, "%Y/%m/%d")
@@ -130,29 +125,25 @@ def setParamsAndUrls():
         "attribution_source": "dynamic",
         "attribution_type": "click",
         "end_date": "",
-        "start_date": start_date,
+        "start_date": "",
         "event_kpis": "all_events|revenue",
         "grouping": "trackers",
         "kpis": "installs, ctr, click_conversion_rate, revenue, cost, return_on_investment, rcr, paid_impressions, "
                 "ecpm, paid_clicks, ecpc, paid_installs, ecpi, cohort_revenue, cohort_gross_profit",
-        "partner_ids": 34,
         "reattributed": "all",
         "utc_offset": "+00:00"
     }
 
-    delta_days = (end_time - start_time).days + 1
-    if delta_days < period:
-        print('错误：周期设置大于起始和终止时间间隔')
-        exit(-1)
-    num = int(delta_days / period) + 1
+    num = (end_time - start_time).days + 1
     for i in range(num):
-        iend_time = start_time + datetime.timedelta(days=period * (i + 1) - 1)
-        if iend_time > end_time:
-            iend_time = end_time
+        iend_time = start_time + datetime.timedelta(days=i)
+        daysToToday = (datetime.datetime.now() - iend_time).days
         end_date = iend_time.strftime('%Y-%m-%d')
         params_ad["end_date"] = end_date
-        params[end_date] = params_ad.copy()
-        all_keys.append(end_date)
+        params_ad["start_date"] = end_date
+        date_key = "{}_{}天".format(end_date, daysToToday)
+        params[date_key] = params_ad.copy()
+        all_keys.append(date_key)
 
 def run():
     setParamsAndUrls()
