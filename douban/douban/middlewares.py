@@ -113,7 +113,7 @@ class SeleniumMiddleware(object):
         self.timeout = timeout
         self.chrome_options = Options()
         self.chrome_options.add_argument('--headless')
-        path = '../venv/Scripts/chromedriver81.exe'
+        path = '../venv/Scripts/chromedriver.exe'
         self.driver = webdriver.Chrome(chrome_options=self.chrome_options, executable_path=path)
         self.wait = WebDriverWait(self.driver, self.timeout)
 

@@ -34,7 +34,7 @@ def getCookies():
     # 设置浏览器参数
     # --headless是不显示浏览器启动以及执行过程
     # chrome_options.add_argument('--headless')
-    path = '../venv/Scripts/chromedriver81.exe'
+    path = '../venv/Scripts/chromedriver.exe'
     driver = webdriver.Chrome(executable_path=path, chrome_options=chrome_options)
     # driver = webdriver.Chrome(chrome_options=chrome_options)
     # 访问两个URL，QQ网站才能生成Cookies

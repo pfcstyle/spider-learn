@@ -152,7 +152,7 @@ def startChrome():
     # --headless是不显示浏览器启动以及执行过程
     # chrome_options.add_argument('--headless')
     # 通过驱动器程序启动chrome
-    path = '../venv/Scripts/chromedriver81.exe'
+    path = '../venv/Scripts/chromedriver.exe'
     driver = webdriver.Chrome(executable_path=path, options=chrome_options)
     driver.maximize_window()
 

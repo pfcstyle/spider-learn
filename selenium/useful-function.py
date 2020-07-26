@@ -12,7 +12,7 @@ chrome_options.add_argument('lang=zh_CN.UTF-8')
 UserAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.84 Safari/537.36'
 chrome_options.add_argument('User-Agent=' + UserAgent)
 # 启动浏览器并设置chrome_options参数
-path = '../venv/Scripts/chromedriver81.exe'
+path = '../venv/Scripts/chromedriver.exe'
 driver = webdriver.Chrome(executable_path=path, chrome_options=chrome_options)
 # 浏览器窗口最大化
 # driver.maximize_window()

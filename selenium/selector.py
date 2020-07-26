@@ -1,6 +1,6 @@
 from selenium import webdriver
 url = 'https://movie.douban.com/'
-path = '../venv/Scripts/chromedriver81.exe'
+path = '../venv/Scripts/chromedriver.exe'
 driver = webdriver.Chrome(executable_path=path)
 driver.get(url)
 # 定位

@@ -8,7 +8,7 @@ url = 'https://www.baidu.com/'
 # http://npm.taobao.org/mirrors/chromedriver
 # http://chromedriver.storage.googleapis.com/index.html
 # 下载对应版本
-path = '../venv/Scripts/chromedriver81.exe'
+path = '../venv/Scripts/chromedriver.exe'
 browser = webdriver.Chrome(executable_path=path)
 # 打开浏览器并访问百度网址
 browser.get(url)

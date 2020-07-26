@@ -1,7 +1,7 @@
 
 from selenium import webdriver
 url = 'https://ssl.zc.qq.com/v3/index-chs.html?from=pt'
-path = '../venv/Scripts/chromedriver81.exe'
+path = '../venv/Scripts/chromedriver.exe'
 driver = webdriver.Chrome(executable_path=path)
 driver.get(url)
 # 输入名字和密码
@@ -20,7 +20,7 @@ driver.find_element_by_id('get_acc').submit()
 from selenium.webdriver.common.action_chains import ActionChains
 import time
 from selenium import webdriver
-path = '../venv/Scripts/chromedriver81.exe'
+path = '../venv/Scripts/chromedriver.exe'
 driver = webdriver.Chrome(executable_path=path)
 url = 'https://passport.bilibili.com/login'
 driver.get(url)
@@ -38,7 +38,7 @@ ActionChains(driver).drag_and_drop_by_offset(element, 100, 0).perform()
 from selenium.webdriver.common.keys import Keys
 import time
 from selenium import webdriver
-path = '../venv/Scripts/chromedriver81.exe'
+path = '../venv/Scripts/chromedriver.exe'
 driver = webdriver.Chrome(executable_path=path)
 driver.get("http://www.baidu.com")
 
