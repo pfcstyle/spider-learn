@@ -35,6 +35,7 @@ headers = {
 
 base_url = 'https://api.adjust.com/kpis/v1'
 csv_dir = './csv_once'
+output_dir = './output'
 output_file = 'output/output_once.xlsx'
 
 
@@ -99,6 +100,8 @@ def getExcelData(key: str, data: pd.DataFrame, final_excel_data: dict):
 
 
 def writeExcelByPandas(data: dict):
+    if not os.path.exists(output_dir):
+        os.mkdir(output_dir)
     writer = pd.ExcelWriter(output_file)
     for key in data.keys():
         df: pd.DataFrame = data.get(key)

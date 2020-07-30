@@ -35,7 +35,8 @@ headers = {
 
 base_url = 'https://api.adjust.com/kpis/v1'
 csv_dir = './csv_event'
-output_file = 'output/output_event.xlsx'
+output_dir = './output'
+output_file = '{}/output_event.xlsx'.format(output_dir)
 
 
 def saveData(result: dict):
@@ -55,7 +56,7 @@ def saveData(result: dict):
         writer.writerows(data)
         f.close()
         data = pd.DataFrame(pd.read_csv('{}/{}.csv'.format(csv_dir, key)))
-        getExcelData(key, data, final_excel_data)
+        final_excel_data[key] = getExcelData(key, data)
     writeExcelByPandas(final_excel_data)
 
 
@@ -79,26 +80,16 @@ def mergeData(data: list):
     return merged_data
 
 
-def getExcelData(key: str, data: pd.DataFrame, final_excel_data: dict):
-    all_excel_data = data.loc[(data['period'] == 0), ['date', 'converted_users']]
-    # all_excel_data.rename(columns={'converted_users': key}, inplace=True)
-    # all_excel_data: pd.DataFrame = all_excel_data.set_index(['date', 'period']).unstack()
-    country_key = 'jp'
-    if key.find('jp') > -1:
-        country_key = 'jp'
-    elif key.find('us') > -1:
-        country_key = 'us'
-    else:
-        country_key = 'kr'
-    if country_key not in final_excel_data.keys():
-        final_excel_data[country_key] = all_excel_data
-        final_excel_data[country_key].rename(columns={'converted_users': key}, inplace=True)
-    else:
-        final_excel_data[country_key][key] = all_excel_data['converted_users']
+def getExcelData(key: str, data: pd.DataFrame):
+    all_excel_data = data.loc[(data['period'] == 0), ['date', 'converted_users', 'events_per_user']]
+    all_excel_data.rename(columns={'date': 'date_{}'.format(key)}, inplace=True)
+    # all_excel_data: pd.DataFrame = all_excel_data.set_index(['date']).unstack()
     return all_excel_data
 
 
 def writeExcelByPandas(data: dict):
+    if not os.path.exists(output_dir):
+        os.mkdir(output_dir)
     writer = pd.ExcelWriter(output_file)
     for key in data.keys():
         df: pd.DataFrame = data.get(key)
@@ -121,13 +112,17 @@ def setParamsAndUrls():
     os_names = config.get('event', 'os_names')
     events = pd.read_excel('./data/event-token-summary.xlsx')
 
-    if os_names != 'ios' and os_names != 'android' and os_names != 'ios,android' and os_names != '':
+    if os_names != 'ios' and os_names != 'android' \
+            and os_names != 'ios,android' \
+            and os_names != '' and os_names != 'android,ios':
         print('错误：os_names设置错误')
         exit(-1)
     else:
         os_names = os_names.split(',')
 
-    if events.shape[0] !=2 or events.shape[1] < 2:
+    if events.shape[0] != 2 or events.shape[1] < 2 \
+            or (events.get('token') is None) or (events.get('event name') is None) \
+            or len(events['token']) != len(events['event name']):
         print('错误：events设置错误')
         exit(-1)
 
@@ -159,14 +154,25 @@ def setParamsAndUrls():
         "utc_offset": "+00:00"
     }
 
-    for event in events:
+    for i in range(0, len(events['token'])):
+        event_token = events['token'][i]
+        event_name = events['event name'][i]
         for country in countries:
-            params_once = params_once.copy()
-            params_once['countries'] = country
-            params_once['events'] = event
-            country_event_key = 'cohorts_{}_{}'.format(event, country)
+            params_event['countries'] = country
+            params_event['events'] = event_token
+            if len(os_names) < 1:
+                params_key = '{}_{}'.format(country, event_name)
+                del params_event['os_names']
+                params[params_key] = params_event
+                params_event = params_event.copy()
+            else:
+                for os in os_names:
+                    params_key = '{}_{}_{}'.format(os, country, event_name)
+                    params_event['os_names'] = os
+                    params[params_key] = params_event
+                    params_event = params_event.copy()
 
-            params[country_event_key] = params_once
+
 
 def run():
     setParamsAndUrls()

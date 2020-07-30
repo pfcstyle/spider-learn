@@ -35,6 +35,7 @@ headers = {
 
 base_url = 'https://api.adjust.com/kpis/v1'
 csv_dir = './csv_lt'
+output_dir = './output'
 output_file = 'output/output_lt{}.xlsx'
 
 
@@ -108,6 +109,8 @@ def getExcelData(key: str, data: pd.DataFrame):
 
 
 def writeExcelByPandas(data: dict):
+    if not os.path.exists(output_dir):
+        os.mkdir(output_dir)
     start_time = config.get('lt', 'start_time')
     start_time = datetime.datetime.strptime(start_time, "%Y/%m/%d")
     start_date = start_time.strftime('%Y-%m-%d')

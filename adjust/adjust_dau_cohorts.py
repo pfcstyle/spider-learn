@@ -78,6 +78,8 @@ def getExcelData(key: str, data: pd.DataFrame):
 
 
 def writeExcelByPandas(data: dict):
+    if not os.path.exists('./output'):
+        os.mkdir('./output')
     writer = pd.ExcelWriter('output/output.xlsx')
     for key in data.keys():
         df: pd.DataFrame = data.get(key)
