@@ -34,8 +34,8 @@ headers = {
 
 
 base_url = 'https://api.adjust.com/kpis/v1'
-csv_dir = './csv_lt'
-output_file = 'output/output_lt{}.xlsx'
+csv_dir = './csv_event'
+output_file = 'output/output_event.xlsx'
 
 
 def saveData(result: dict):
@@ -55,8 +55,7 @@ def saveData(result: dict):
         writer.writerows(data)
         f.close()
         data = pd.DataFrame(pd.read_csv('{}/{}.csv'.format(csv_dir, key)))
-        final_excel_data[key] = getExcelData(key, data)
-        print('正在处理{}'.format(key))
+        getExcelData(key, data, final_excel_data)
     writeExcelByPandas(final_excel_data)
 
 
@@ -80,38 +79,27 @@ def mergeData(data: list):
     return merged_data
 
 
-
-def secondToMinuteS(frame):
-    m, s = divmod(frame['time_spent_per_user'], 60)
-    m = 0 if np.isnan(m) else m
-    s = 0 if np.isnan(s) else s
-    return '{}m {}s'.format(int(m), int(s))
-
-
-def getExcelData(key: str, data: pd.DataFrame):
-    data: pd.DataFrame = data.loc[:, ['date', 'period', 'retention_rate']]
-    data: pd.DataFrame = data.set_index(['date', 'period']).unstack()
-    data.dropna(how='all', inplace=True)
-    data.dropna(how='all', inplace=True, axis=1)
-    # data = data.apply(lambda row: None if row.isnull().sum() >= len(row) else row, axis=1)
-    all_excel_data = data.copy(deep=True)
-
-    column_num = data.shape[1]
-    for period in [30, 60, 90, 100, 120]:
-        if period > column_num - 1:
-            continue
-        temp_data: pd.DataFrame = data.iloc[:, 0: period + 1]
-        # all_excel_data["{}d".format(period)] = temp_data.apply(lambda row: None if len(row.dropna()) < period + 1 and row[len(period)] else row.sum(), axis=1)
-        all_excel_data["{}d".format(period)] = temp_data.apply(lambda row: row.sum(), axis=1)
-    # all_excel_data = all_excel_data.drop(labels=[1, 2])
+def getExcelData(key: str, data: pd.DataFrame, final_excel_data: dict):
+    all_excel_data = data.loc[(data['period'] == 0), ['date', 'converted_users']]
+    # all_excel_data.rename(columns={'converted_users': key}, inplace=True)
+    # all_excel_data: pd.DataFrame = all_excel_data.set_index(['date', 'period']).unstack()
+    country_key = 'jp'
+    if key.find('jp') > -1:
+        country_key = 'jp'
+    elif key.find('us') > -1:
+        country_key = 'us'
+    else:
+        country_key = 'kr'
+    if country_key not in final_excel_data.keys():
+        final_excel_data[country_key] = all_excel_data
+        final_excel_data[country_key].rename(columns={'converted_users': key}, inplace=True)
+    else:
+        final_excel_data[country_key][key] = all_excel_data['converted_users']
     return all_excel_data
 
 
 def writeExcelByPandas(data: dict):
-    start_time = config.get('lt', 'start_time')
-    start_time = datetime.datetime.strptime(start_time, "%Y/%m/%d")
-    start_date = start_time.strftime('%Y-%m-%d')
-    writer = pd.ExcelWriter(output_file.format(start_date))
+    writer = pd.ExcelWriter(output_file)
     for key in data.keys():
         df: pd.DataFrame = data.get(key)
         df.to_excel(writer, key)
@@ -127,68 +115,75 @@ async def getData(url, params, key):
 
 
 def setParamsAndUrls():
+    start_time = config.get('event', 'start_time')
+    end_time = config.get('event', 'end_time')
+    countries = config.get('event', 'countries').split(',')
+    os_names = config.get('event', 'os_names')
+    events = pd.read_excel('./data/event-token-summary.xlsx')
 
-    start_time = config.get('lt', 'start_time')
+    if os_names != 'ios' and os_names != 'android' and os_names != 'ios,android' and os_names != '':
+        print('错误：os_names设置错误')
+        exit(-1)
+    else:
+        os_names = os_names.split(',')
+
+    if events.shape[0] !=2 or events.shape[1] < 2:
+        print('错误：events设置错误')
+        exit(-1)
+
+    if len(countries) < 1:
+        print('错误：没有设置国家')
+        exit(-1)
+
     try:
+        end_time = datetime.datetime.strptime(end_time, "%Y/%m/%d")
         start_time = datetime.datetime.strptime(start_time, "%Y/%m/%d")
     except Exception as err:
         print('错误：start_time or end_time设置错误')
         print(err)
         exit(-1)
-    end_time = start_time + datetime.timedelta(days=120)
+
     start_date = start_time.strftime('%Y-%m-%d')
     end_date = end_time.strftime('%Y-%m-%d')
-    params_android = {
+    params_event = {
         "attribution_source": "dynamic",
         "attribution_type": "click",
         "end_date": end_date,
         "start_date": start_date,
-        "cohort_period_filter": "0 - 120",
-        "event_kpis": "all_events|revenue",
+        "os_names": "android",
+        "events": "8w38y5",
         "grouping": "day,periods",
-        "kpis": "retention_rate",
+        "kpis": "converted_users,events_per_user",
         "period": "day",
         "reattributed": "all",
-        "utc_offset": "+00:00",
-        "os_names": "android"
+        "utc_offset": "+00:00"
     }
 
-    countries = ['jp', 'us', 'kr', 'cn', 'hk,mo,tw']
-    # countries = ['jp']
-    for country in countries:
-        params_android = params_android.copy()
-        params_android['os_names'] = 'android'
-        params_android['countries'] = country
+    for event in events:
+        for country in countries:
+            params_once = params_once.copy()
+            params_once['countries'] = country
+            params_once['events'] = event
+            country_event_key = 'cohorts_{}_{}'.format(event, country)
 
-        params_ios = params_android.copy()
-        params_ios['os_names'] = 'ios'
-
-        country_key_android = 'cohorts_android_{}'.format(country)
-        country_key_ios = 'cohorts_ios_{}'.format(country)
-
-        params[country_key_android] = params_android
-
-        params[country_key_ios] = params_ios
-
+            params[country_event_key] = params_once
 
 def run():
     setParamsAndUrls()
     # testSave()
-    print("正在请求数据。。。")
     for key in params.keys():
         param = params.get(key)
         task = asyncio.ensure_future(getData(url_cohorts, param, key))
         tasks.append(task)
     loop.run_until_complete(asyncio.gather(*tasks))
     saveData(result)
-    print("处理完成")
 
 
 if __name__ == '__main__':
-    secretConfig = configparser.ConfigParser()
-    secretConfig.read('./secret.ini')
     config = configparser.ConfigParser()
     config.read('./config.ini')
+    secretConfig = configparser.ConfigParser()
+    secretConfig.read('./secret.ini')
     token = secretConfig.get('account', 'token')
     app_token = secretConfig.get('account', 'app_token')
     tracker_token = secretConfig.get('account', 'tracker_token')

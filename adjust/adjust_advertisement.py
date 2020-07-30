@@ -35,7 +35,7 @@ headers = {
 
 base_url = 'https://api.adjust.com/kpis/v1'
 csv_dir = './csv_ad'
-output_file = 'output_ad{}.xlsx'
+output_file = 'output/output_ad{}.xlsx'
 
 
 def saveData(result: dict):

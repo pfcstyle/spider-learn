@@ -35,7 +35,7 @@ headers = {
 
 base_url = 'https://api.adjust.com/kpis/v1'
 csv_dir = './csv_once'
-output_file = 'output_once.xlsx'
+output_file = 'output/output_once.xlsx'
 
 
 def saveData(result: dict):
@@ -131,7 +131,7 @@ def setParamsAndUrls():
         "utc_offset": "+00:00"
     }
 
-    events = pd.read_excel('./data/event-token-summary.xlsx', squeeze = True)
+    events = pd.read_excel('./data/once-token-summary.xlsx', squeeze = True)
 
     # events = ["8w38y5"]
     countries = ['jp', 'us', 'kr']

@@ -78,7 +78,7 @@ def getExcelData(key: str, data: pd.DataFrame):
 
 
 def writeExcelByPandas(data: dict):
-    writer = pd.ExcelWriter('output.xlsx')
+    writer = pd.ExcelWriter('output/output.xlsx')
     for key in data.keys():
         df: pd.DataFrame = data.get(key)
         df.to_excel(writer, key)
