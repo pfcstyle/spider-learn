@@ -52,7 +52,7 @@ def saveData(result: dict):
         data = pd.DataFrame(pd.read_csv('csv/{}.csv'.format(key)))
         final_excel_data[key] = getExcelData(key, data)
     writeExcelByPandas(final_excel_data)
-
+    print("完成！")
 
 def secondToMinuteS(frame):
     m, s = divmod(frame['time_spent_per_user'], 60)

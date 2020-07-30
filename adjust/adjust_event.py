@@ -120,7 +120,7 @@ def setParamsAndUrls():
     else:
         os_names = os_names.split(',')
 
-    if events.shape[0] != 2 or events.shape[1] < 2 \
+    if events.shape[0] < 1 or events.shape[1] != 2 \
             or (events.get('token') is None) or (events.get('event name') is None) \
             or len(events['token']) != len(events['event name']):
         print('错误：events设置错误')
@@ -183,6 +183,7 @@ def run():
         tasks.append(task)
     loop.run_until_complete(asyncio.gather(*tasks))
     saveData(result)
+    print("处理完成")
 
 
 if __name__ == '__main__':
